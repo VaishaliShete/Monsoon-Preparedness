@@ -1,0 +1,194 @@
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.app__header h1 {
+  font-size: 32px;
+  margin: 0 0 8px;
+}
+
+.app__header p {
+  margin: 0 0 24px;
+  max-width: 60ch;
+}
+
+.app__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.app__form label {
+  font-weight: 600;
+}
+
+.app__form textarea {
+  font: inherit;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+
+.app__form > button[type='submit'] {
+  align-self: flex-start;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app__form > button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sample-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sample-buttons__item {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.sample-buttons__item:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.sample-buttons__item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading-text {
+  color: var(--text);
+}
+
+.error-state {
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.error-state button {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+}
+
+.readiness-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  background: var(--surface);
+}
+
+.readiness-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.readiness-card__header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.risk-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.risk-badge--moderate {
+  background: #fff4d6;
+  color: #7a5a00;
+}
+
+.risk-badge--high {
+  background: #ffe3d1;
+  color: #8a3a00;
+}
+
+.risk-badge--severe {
+  background: #ffd6d6;
+  color: #8a1f1f;
+}
+
+.readiness-card__summary {
+  margin: 16px 0;
+  font-style: italic;
+}
+
+.readiness-card__trigger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.readiness-card__trigger h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.readiness-card__trigger p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.readiness-card section {
+  margin-bottom: 20px;
+}
+
+.readiness-card section:last-child {
+  margin-bottom: 0;
+}
+
+.readiness-card h3 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+
+.readiness-card__checklist {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.readiness-card__checklist li {
+  margin-bottom: 8px;
+}
+
+.readiness-card ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.readiness-card ul li {
+  margin-bottom: 6px;
+}
