@@ -1,5 +1,7 @@
 export const MODEL = 'gemini-flash-latest'
 
+export const RISK_TIERS = ['moderate', 'high', 'severe']
+
 export const READINESS_CARD_SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -9,7 +11,7 @@ export const READINESS_CARD_SCHEMA = {
     },
     risk_tier: {
       type: 'STRING',
-      enum: ['moderate', 'high', 'severe'],
+      enum: RISK_TIERS,
       description: 'Overall flood vulnerability tier for this household.',
     },
     evacuation_trigger: {
@@ -100,7 +102,7 @@ export const LOCALIZATION_SYSTEM_PROMPT = `You localize household flood readines
 export function isValidCard(card) {
   if (!card || typeof card !== 'object') return false
   if (typeof card.household_summary !== 'string' || !card.household_summary.trim()) return false
-  if (!['moderate', 'high', 'severe'].includes(card.risk_tier)) return false
+  if (!RISK_TIERS.includes(card.risk_tier)) return false
   if (typeof card.evacuation_trigger !== 'string' || !card.evacuation_trigger.trim()) return false
   if (!Array.isArray(card.prioritized_checklist) || card.prioritized_checklist.length === 0) return false
   if (!card.prioritized_checklist.every((i) => i && typeof i.action === 'string' && typeof i.reason === 'string')) return false

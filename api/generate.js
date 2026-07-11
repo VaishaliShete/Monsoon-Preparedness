@@ -1,5 +1,5 @@
-import { GoogleGenAI } from '@google/genai'
 import { MODEL, READINESS_CARD_SCHEMA, SYSTEM_PROMPT, isValidCard } from '../src/utils/cardSchema.js'
+import { generateStructuredContent } from '../src/utils/geminiClient.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,33 +14,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      throw new Error('Missing GEMINI_API_KEY')
-    }
-
-    const ai = new GoogleGenAI({ apiKey })
-    const response = await ai.models.generateContent({
+    const card = await generateStructuredContent({
       model: MODEL,
+      systemInstruction: SYSTEM_PROMPT,
       contents: [{ role: 'user', parts: [{ text: householdDescription }] }],
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        responseMimeType: 'application/json',
-        responseSchema: READINESS_CARD_SCHEMA,
-      },
+      schema: READINESS_CARD_SCHEMA,
+      validate: isValidCard,
     })
 
-    const rawText = response?.text
-    if (!rawText) {
-      throw new Error('Empty response from Gemini')
-    }
-
-    const parsed = JSON.parse(rawText)
-    if (!isValidCard(parsed)) {
-      throw new Error('Malformed card from Gemini')
-    }
-
-    res.status(200).json({ card: parsed })
+    res.status(200).json({ card })
   } catch (err) {
     console.error('generate.js error:', err)
     res.status(502).json({ error: 'Something went wrong, please try again' })

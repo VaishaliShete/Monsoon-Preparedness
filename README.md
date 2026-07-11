@@ -41,6 +41,37 @@ Three one-click sample households are included so the flow can be demoed without
 
 No other Google Cloud service is used — Translate/Maps were considered for Phase 3, but Gemini-based localization was chosen instead so the "not machine-translated word-for-word" requirement and the bilingual demo requirement are met by the same mechanism, without adding a second API and credential to manage.
 
+## Architecture
+
+```
+api/
+  generate.js          Vercel serverless function — POST { householdDescription } -> { card }
+  localize.js           Vercel serverless function — POST { card, languageName } -> { card }
+src/
+  hooks/
+    useReadinessCard.js     generate-flow state machine (input, status, card, retry)
+    useCardTranslation.js   bilingual-localization state machine, keyed to the current card
+  services/
+    gemini.js            client-side fetch wrappers around /api/generate and /api/localize,
+                          plus in-memory response caching
+  utils/
+    cardSchema.js          shared Gemini response schemas, prompts, and validators
+                          (imported by both the API routes and the client)
+    geminiClient.js         server-only helper that calls @google/genai with a schema
+                          and validates the parsed result (used by api/*.js only)
+    sanitize.js            input length limits + DOMPurify sanitization
+  components/             presentational React components (form, card, error states)
+  App.jsx                 composes the two hooks above with the presentational components
+  main.jsx                 mounts <App /> inside a top-level <ErrorBoundary />
+```
+
+The client never talks to Gemini directly — `src/services/gemini.js` only ever calls
+`/api/generate` and `/api/localize` over `fetch`. `src/utils/cardSchema.js` is shared
+between the client and the API routes so both sides validate against the same shape
+without duplicating it; `src/utils/geminiClient.js` (which imports `@google/genai`) is
+only ever imported by files under `/api`, so the SDK and the API key never end up in the
+client bundle — see [How to run](#how-to-run) for the env var this requires.
+
 ## Assumptions
 
 - The Gemini API key is read server-side only, as `GEMINI_API_KEY` (no `VITE_` prefix) inside the Vercel serverless functions under `/api`. It is never bundled into client-side JS. The frontend (`src/services/gemini.js`) calls `/api/generate` and `/api/localize` over `fetch`, and never talks to `generativelanguage.googleapis.com` directly.

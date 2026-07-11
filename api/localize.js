@@ -1,5 +1,5 @@
-import { GoogleGenAI } from '@google/genai'
 import { MODEL, LOCALIZED_CARD_SCHEMA, LOCALIZATION_SYSTEM_PROMPT, isValidLocalizedCard } from '../src/utils/cardSchema.js'
+import { generateStructuredContent } from '../src/utils/geminiClient.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,17 +14,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      throw new Error('Missing GEMINI_API_KEY')
-    }
-
-    const ai = new GoogleGenAI({ apiKey })
     const translatable = { ...card }
     delete translatable.risk_tier
 
-    const response = await ai.models.generateContent({
+    const localizedCard = await generateStructuredContent({
       model: MODEL,
+      systemInstruction: LOCALIZATION_SYSTEM_PROMPT,
       contents: [
         {
           role: 'user',
@@ -35,24 +30,11 @@ export default async function handler(req, res) {
           ],
         },
       ],
-      config: {
-        systemInstruction: LOCALIZATION_SYSTEM_PROMPT,
-        responseMimeType: 'application/json',
-        responseSchema: LOCALIZED_CARD_SCHEMA,
-      },
+      schema: LOCALIZED_CARD_SCHEMA,
+      validate: isValidLocalizedCard,
     })
 
-    const rawText = response?.text
-    if (!rawText) {
-      throw new Error('Empty response from Gemini')
-    }
-
-    const parsed = JSON.parse(rawText)
-    if (!isValidLocalizedCard(parsed)) {
-      throw new Error('Malformed localized card from Gemini')
-    }
-
-    res.status(200).json({ card: parsed })
+    res.status(200).json({ card: localizedCard })
   } catch (err) {
     console.error('localize.js error:', err)
     res.status(502).json({ error: 'Something went wrong, please try again' })

@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify'
 
 export const MAX_DESCRIPTION_LENGTH = 2000
+export const MIN_DESCRIPTION_LENGTH = 20
 
 export function sanitizeDescription(input) {
   const stripped = DOMPurify.sanitize(input ?? '', { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
@@ -12,8 +13,11 @@ export function validateDescription(input) {
   if (!clean) {
     return { valid: false, error: 'Please describe your household before generating a card.' }
   }
-  if (clean.length < 20) {
-    return { valid: false, error: 'Please add a bit more detail (at least 20 characters).' }
+  if (clean.length < MIN_DESCRIPTION_LENGTH) {
+    return {
+      valid: false,
+      error: `Please add a bit more detail (at least ${MIN_DESCRIPTION_LENGTH} characters).`,
+    }
   }
   return { valid: true, value: clean }
 }
