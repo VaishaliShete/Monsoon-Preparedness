@@ -54,6 +54,8 @@ const READINESS_CARD_SCHEMA = {
   ],
 }
 
+const cardCache = new Map()
+
 function getClient() {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY
   if (!apiKey) {
@@ -65,7 +67,7 @@ function getClient() {
 const SYSTEM_PROMPT = `You are a monsoon flood-preparedness assistant for households in Indian cities prone to urban flooding (e.g. Bengaluru low-lying layouts near stormwater drains).
 Given a messy, informal description of a household, produce a personalized, specific flood readiness plan — not a generic checklist. Name the household's actual people and vulnerabilities (e.g. an elderly or diabetic family member, small children, mobility issues, ground floor, no vehicle, past flooding experience) directly in the checklist reasons and evacuation trigger. Keep language plain and practical for a non-expert reader.`
 
-function isValidCard(card) {
+export function isValidCard(card) {
   if (!card || typeof card !== 'object') return false
   if (typeof card.household_summary !== 'string' || !card.household_summary.trim()) return false
   if (!['moderate', 'high', 'severe'].includes(card.risk_tier)) return false
@@ -78,6 +80,11 @@ function isValidCard(card) {
 }
 
 export async function generateReadinessCard(householdDescription) {
+  const cacheKey = householdDescription.trim()
+  if (cardCache.has(cacheKey)) {
+    return cardCache.get(cacheKey)
+  }
+
   const ai = getClient()
 
   let response
@@ -111,5 +118,6 @@ export async function generateReadinessCard(householdDescription) {
     throw new Error("Gemini's response was missing required fields.")
   }
 
+  cardCache.set(cacheKey, parsed)
   return parsed
 }

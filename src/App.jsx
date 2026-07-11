@@ -1,28 +1,39 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import './App.css'
 import SampleInputButtons from './components/SampleInputButtons'
 import ReadinessCard from './components/ReadinessCard'
 import ErrorState from './components/ErrorState'
 import { generateReadinessCard } from './services/gemini'
+import { MAX_DESCRIPTION_LENGTH, validateDescription } from './utils/sanitize'
 
 export default function App() {
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [card, setCard] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const requestIdRef = useRef(0)
 
   async function handleGenerate(e) {
     e.preventDefault()
-    if (!description.trim()) return
 
+    const { valid, value, error } = validateDescription(description)
+    if (!valid) {
+      setErrorMessage(error)
+      setStatus('error')
+      return
+    }
+
+    const requestId = ++requestIdRef.current
     setStatus('loading')
     setErrorMessage('')
     try {
-      const result = await generateReadinessCard(description)
+      const result = await generateReadinessCard(value)
+      if (requestIdRef.current !== requestId) return // a newer request superseded this one
       setCard(result)
       setStatus('success')
     } catch (err) {
-      setErrorMessage(err.message || 'Something went wrong.')
+      if (requestIdRef.current !== requestId) return
+      setErrorMessage(err.message || 'Something went wrong. Please try again.')
       setStatus('error')
     }
   }
@@ -50,7 +61,12 @@ export default function App() {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="e.g. I live on the ground floor near a stormwater drain with my elderly mother and two kids..."
           rows={6}
+          maxLength={MAX_DESCRIPTION_LENGTH}
+          aria-describedby="household-description-hint"
         />
+        <p id="household-description-hint" className="app__hint">
+          {description.length}/{MAX_DESCRIPTION_LENGTH} characters
+        </p>
 
         <SampleInputButtons onPick={setDescription} disabled={status === 'loading'} />
 
