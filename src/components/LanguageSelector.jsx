@@ -1,4 +1,4 @@
-import { SUPPORTED_LANGUAGES } from '../services/gemini'
+import { SUPPORTED_LANGUAGES } from '../utils/cardSchema'
 
 export default function LanguageSelector({ activeLanguage, onSelect, loading }) {
   return (

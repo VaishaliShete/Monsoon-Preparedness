@@ -1,8 +1,8 @@
-const TIER_LABEL = {
-  moderate: 'Moderate Risk',
-  high: 'High Risk',
-  severe: 'Severe Risk',
-}
+import { RISK_TIERS } from '../utils/cardSchema'
+
+const TIER_LABEL = Object.fromEntries(
+  RISK_TIERS.map((tier) => [tier, `${tier[0].toUpperCase()}${tier.slice(1)} Risk`]),
+)
 
 function Bilingual({ en, translated }) {
   if (!translated) return en
