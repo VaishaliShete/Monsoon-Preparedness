@@ -34,7 +34,7 @@ Three one-click sample households are included so the flow can be demoed without
 
 ## Google services used, and why
 
-- **Gemini (`gemini-2.5-flash`) via `@google/genai`** — used for three distinct, meaningful jobs:
+- **Gemini (`gemini-flash-latest`) via `@google/genai`** — called server-side only, from two Vercel serverless functions (`api/generate.js`, `api/localize.js`), for three distinct, meaningful jobs:
   1. **Extraction + generation in one structured call.** The messy household paragraph is sent with a `responseSchema` (JSON schema enforced by Gemini's structured output) that describes the full readiness card shape — summary, risk tier, evacuation trigger, checklist, medicine/document steps, contact template. This keeps extraction and generation as a single call for the demo, while still requiring a strict, parseable, typed shape.
   2. **Personalized generation, not a template.** The system prompt explicitly instructs Gemini to name the household's actual people and vulnerabilities inside the checklist reasons and evacuation trigger, so two different households never get the same plan.
   3. **LLM-driven localization.** A second Gemini call takes the generated English card and regenerates it idiomatically in the selected regional language (Kannada, Hindi, or Tamil), rather than piping it through a literal machine-translation API. This was a deliberate choice: Google Translate would produce word-for-word output, which the product spec explicitly calls out as insufficient for a life-safety document that needs to read naturally to a native speaker.
@@ -43,18 +43,23 @@ No other Google Cloud service is used — Translate/Maps were considered for Pha
 
 ## Assumptions
 
-- The Gemini API key is a client-side env var (`VITE_GEMINI_API_KEY`), not proxied through a backend. This is acceptable for a local demo/prototype but **is not safe for a public deployment** — anyone with access to the built JS bundle can read the key. A thin Node/Express proxy would be the next step before shipping this publicly.
+- The Gemini API key is read server-side only, as `GEMINI_API_KEY` (no `VITE_` prefix) inside the Vercel serverless functions under `/api`. It is never bundled into client-side JS. The frontend (`src/services/gemini.js`) calls `/api/generate` and `/api/localize` over `fetch`, and never talks to `generativelanguage.googleapis.com` directly.
 - One combined Gemini call handles both "extraction" and "generation" for the primary card, rather than two separate round trips, to keep the demo fast and the code simple; the structured JSON schema still gives a distinct, inspectable "profile" shape.
 - Risk tier (`moderate` / `high` / `severe`) is inferred by Gemini per household rather than by a separate rules-based classifier.
 - Localization only translates the plan's free-text content; the risk badge label and static UI chrome remain in English for this build.
-- No backend/database — all state is in-memory in the browser (including a simple in-memory cache of generated/translated cards, cleared on reload).
+- No database — response caching is a simple in-memory `Map` in the browser tab, cleared on reload; the serverless functions themselves are stateless.
+- Serverless function errors are logged server-side (`console.error`) but never returned to the client — the client only ever sees a generic `{ error: "Something went wrong, please try again" }` message.
 
 ## How to run
 
+Locally, with plain `vite dev`, the UI runs but the `/api/*` routes are not served (Vite doesn't run Vercel functions) — use the Vercel CLI for full-stack local testing, or deploy to Vercel directly.
+
 ```bash
 npm install
-cp .env.example .env      # then add your real Gemini API key
-npm run dev                # start the dev server
+cp .env.example .env      # then add your real Gemini API key as GEMINI_API_KEY
+npm run dev                # UI only — form/sample buttons work, but "Generate" will fail without vercel dev
+# or, for the full stack locally:
+npx vercel dev              # serves both the Vite app and /api functions together
 ```
 
 Other scripts:
@@ -65,4 +70,10 @@ npm run test        # run the Vitest suite
 npm run lint       # oxlint, zero warnings expected
 ```
 
-Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) and put it in `.env` as `VITE_GEMINI_API_KEY`. Never commit `.env` — it's gitignored.
+### Deploying to Vercel
+
+1. Import this repo into Vercel (it auto-detects the Vite framework and picks up `/api/*.js` as serverless functions with no extra config).
+2. In **Project Settings → Environment Variables**, add `GEMINI_API_KEY` (get one from [Google AI Studio](https://aistudio.google.com/apikey)) — **do not** prefix it with `VITE_`, or it will be exposed to the client.
+3. Redeploy after adding the env var if the first deploy already ran, since it's only picked up at build/runtime after being set.
+
+Never commit `.env` — it's gitignored.
