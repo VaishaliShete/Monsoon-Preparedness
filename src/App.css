@@ -87,6 +87,46 @@
   color: var(--text);
 }
 
+.language-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.language-selector button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.language-selector button.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.language-selector button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.translation-error {
+  color: var(--danger);
+  margin: 0 0 16px;
+}
+
+.translated {
+  display: block;
+  font-style: italic;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
 .error-state {
   padding: 16px;
   border-radius: 8px;

@@ -2,10 +2,16 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { generateReadinessCard } from './services/gemini'
+import { generateReadinessCard, localizeReadinessCard } from './services/gemini'
 
 vi.mock('./services/gemini', () => ({
   generateReadinessCard: vi.fn(),
+  localizeReadinessCard: vi.fn(),
+  SUPPORTED_LANGUAGES: [
+    { code: 'kn', name: 'Kannada' },
+    { code: 'hi', name: 'Hindi' },
+    { code: 'ta', name: 'Tamil' },
+  ],
 }))
 
 const validCard = {
@@ -67,5 +73,28 @@ describe('App', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /try again/i }))
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+  })
+
+  it('fetches and renders a translation when a language is selected', async () => {
+    generateReadinessCard.mockResolvedValueOnce(validCard)
+    localizeReadinessCard.mockResolvedValueOnce({
+      household_summary: 'ನೆಲ ಮಹಡಿಯಲ್ಲಿ ವಾಸಿಸುವ ಕುಟುಂಬ.',
+      evacuation_trigger: 'ನೀರು ಬಂದರೆ ತಕ್ಷಣ ಹೊರಡಿ.',
+      prioritized_checklist: [{ action: 'ಔಷಧಿ ಸರಿಸಿ', reason: 'ಮೊದಲು ಪ್ರವಾಹ.' }],
+      medicine_document_safety: ['ಇನ್ಸುಲಿನ್ ಸುರಕ್ಷಿತವಾಗಿಡಿ.'],
+      emergency_contacts_template: ['ಸಂಬಂಧಿ: ____'],
+    })
+    render(<App />)
+    await userEvent.type(
+      screen.getByLabelText(/tell us about your household/i),
+      'I live on the ground floor with my elderly mother and two kids.',
+    )
+    await userEvent.click(screen.getByRole('button', { name: /generate readiness card/i }))
+    await screen.findByText(validCard.household_summary)
+
+    await userEvent.click(screen.getByRole('button', { name: /kannada/i }))
+
+    expect(await screen.findByText('ನೆಲ ಮಹಡಿಯಲ್ಲಿ ವಾಸಿಸುವ ಕುಟುಂಬ.')).toBeInTheDocument()
+    expect(localizeReadinessCard).toHaveBeenCalledWith(validCard, 'Kannada')
   })
 })

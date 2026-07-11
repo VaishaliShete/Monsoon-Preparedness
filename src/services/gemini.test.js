@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isValidCard } from './gemini'
+import { isValidCard, isValidLocalizedCard } from './gemini'
 
 const validCard = {
   household_summary: 'A family of four on the ground floor.',
@@ -37,5 +37,27 @@ describe('isValidCard', () => {
 
   it('rejects an empty medicine_document_safety array', () => {
     expect(isValidCard({ ...validCard, medicine_document_safety: [] })).toBe(false)
+  })
+})
+
+describe('isValidLocalizedCard', () => {
+  const { risk_tier: _omit, ...localizedCard } = validCard
+
+  it('accepts a well-formed localized card without risk_tier', () => {
+    expect(isValidLocalizedCard(localizedCard)).toBe(true)
+  })
+
+  it('rejects null/undefined', () => {
+    expect(isValidLocalizedCard(null)).toBe(false)
+    expect(isValidLocalizedCard(undefined)).toBe(false)
+  })
+
+  it('rejects a missing household_summary', () => {
+    const { household_summary: _h, ...rest } = localizedCard
+    expect(isValidLocalizedCard(rest)).toBe(false)
+  })
+
+  it('rejects an empty emergency_contacts_template array', () => {
+    expect(isValidLocalizedCard({ ...localizedCard, emergency_contacts_template: [] })).toBe(false)
   })
 })

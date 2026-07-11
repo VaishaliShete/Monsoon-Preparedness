@@ -32,4 +32,20 @@ describe('ReadinessCard', () => {
       expect(screen.getByText(item.action)).toBeInTheDocument()
     }
   })
+
+  it('renders the translated summary alongside the English one when a translation is provided', () => {
+    const translation = {
+      household_summary: 'ನೆಲ ಮಹಡಿಯಲ್ಲಿ ವಾಸಿಸುವ ನಾಲ್ಕು ಜನರ ಕುಟುಂಬ.',
+      evacuation_trigger: 'ನೀರು ಹೊಸ್ತಿಲನ್ನು ದಾಟಿದರೆ, ತಕ್ಷಣ ಹೊರಡಿ.',
+      prioritized_checklist: [
+        { action: 'ಔಷಧಿಗಳನ್ನು ಮೇಲಕ್ಕೆ ಸರಿಸಿ', reason: 'ನೆಲ ಮಹಡಿ ಮೊದಲು ಪ್ರವಾಹಕ್ಕೆ ಒಳಗಾಗುತ್ತದೆ.' },
+        { action: 'ಸಿದ್ಧ ಚೀಲ ಪ್ಯಾಕ್ ಮಾಡಿ', reason: 'ತ್ವರಿತ ನಿರ್ಗಮನಕ್ಕೆ ಕಾರು ಇಲ್ಲ.' },
+      ],
+      medicine_document_safety: ['ಇನ್ಸುಲಿನ್ ಅನ್ನು ಎತ್ತರದ ಕಪಾಟಿನಲ್ಲಿ ಜಲನಿರೋಧಕ ಚೀಲದಲ್ಲಿ ಇರಿಸಿ.'],
+      emergency_contacts_template: ['ಎತ್ತರದ ಮಹಡಿಯಲ್ಲಿರುವ ಹತ್ತಿರದ ಸಂಬಂಧಿ: ____'],
+    }
+    render(<ReadinessCard card={card} translation={translation} />)
+    expect(screen.getByText(card.household_summary)).toBeInTheDocument()
+    expect(screen.getByText(translation.household_summary)).toBeInTheDocument()
+  })
 })

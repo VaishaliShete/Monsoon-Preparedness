@@ -4,7 +4,17 @@ const TIER_LABEL = {
   severe: 'Severe Risk',
 }
 
-export default function ReadinessCard({ card }) {
+function Bilingual({ en, translated }) {
+  if (!translated) return en
+  return (
+    <>
+      {en}
+      <span className="translated">{translated}</span>
+    </>
+  )
+}
+
+export default function ReadinessCard({ card, translation }) {
   return (
     <article className="readiness-card" aria-label="Family Flood Readiness Card">
       <header className="readiness-card__header">
@@ -14,11 +24,15 @@ export default function ReadinessCard({ card }) {
         </span>
       </header>
 
-      <p className="readiness-card__summary">{card.household_summary}</p>
+      <p className="readiness-card__summary">
+        <Bilingual en={card.household_summary} translated={translation?.household_summary} />
+      </p>
 
       <section aria-labelledby="trigger-heading" className="readiness-card__trigger">
         <h3 id="trigger-heading">Evacuate now if...</h3>
-        <p>{card.evacuation_trigger}</p>
+        <p>
+          <Bilingual en={card.evacuation_trigger} translated={translation?.evacuation_trigger} />
+        </p>
       </section>
 
       <section aria-labelledby="checklist-heading">
@@ -26,8 +40,13 @@ export default function ReadinessCard({ card }) {
         <ol className="readiness-card__checklist">
           {card.prioritized_checklist.map((item, idx) => (
             <li key={idx}>
-              <strong>{item.action}</strong>
-              <span> — {item.reason}</span>
+              <strong>
+                <Bilingual en={item.action} translated={translation?.prioritized_checklist?.[idx]?.action} />
+              </strong>
+              <span>
+                {' '}
+                — <Bilingual en={item.reason} translated={translation?.prioritized_checklist?.[idx]?.reason} />
+              </span>
             </li>
           ))}
         </ol>
@@ -37,7 +56,9 @@ export default function ReadinessCard({ card }) {
         <h3 id="medicine-heading">Medicine & Document Safety</h3>
         <ul>
           {card.medicine_document_safety.map((step, idx) => (
-            <li key={idx}>{step}</li>
+            <li key={idx}>
+              <Bilingual en={step} translated={translation?.medicine_document_safety?.[idx]} />
+            </li>
           ))}
         </ul>
       </section>
@@ -46,7 +67,9 @@ export default function ReadinessCard({ card }) {
         <h3 id="contacts-heading">Emergency Contact Template</h3>
         <ul>
           {card.emergency_contacts_template.map((entry, idx) => (
-            <li key={idx}>{entry}</li>
+            <li key={idx}>
+              <Bilingual en={entry} translated={translation?.emergency_contacts_template?.[idx]} />
+            </li>
           ))}
         </ul>
       </section>

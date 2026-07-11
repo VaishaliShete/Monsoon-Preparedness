@@ -54,7 +54,48 @@ const READINESS_CARD_SCHEMA = {
   ],
 }
 
+const LOCALIZED_CARD_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    household_summary: { type: Type.STRING },
+    evacuation_trigger: { type: Type.STRING },
+    prioritized_checklist: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          action: { type: Type.STRING },
+          reason: { type: Type.STRING },
+        },
+        required: ['action', 'reason'],
+      },
+    },
+    medicine_document_safety: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+    },
+    emergency_contacts_template: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+    },
+  },
+  required: [
+    'household_summary',
+    'evacuation_trigger',
+    'prioritized_checklist',
+    'medicine_document_safety',
+    'emergency_contacts_template',
+  ],
+}
+
+export const SUPPORTED_LANGUAGES = [
+  { code: 'kn', name: 'Kannada' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'ta', name: 'Tamil' },
+]
+
 const cardCache = new Map()
+const localizationCache = new Map()
 
 function getClient() {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY
@@ -119,5 +160,73 @@ export async function generateReadinessCard(householdDescription) {
   }
 
   cardCache.set(cacheKey, parsed)
+  return parsed
+}
+
+export function isValidLocalizedCard(card) {
+  if (!card || typeof card !== 'object') return false
+  if (typeof card.household_summary !== 'string' || !card.household_summary.trim()) return false
+  if (typeof card.evacuation_trigger !== 'string' || !card.evacuation_trigger.trim()) return false
+  if (!Array.isArray(card.prioritized_checklist) || card.prioritized_checklist.length === 0) return false
+  if (!card.prioritized_checklist.every((i) => i && typeof i.action === 'string' && typeof i.reason === 'string')) return false
+  if (!Array.isArray(card.medicine_document_safety) || card.medicine_document_safety.length === 0) return false
+  if (!Array.isArray(card.emergency_contacts_template) || card.emergency_contacts_template.length === 0) return false
+  return true
+}
+
+const LOCALIZATION_SYSTEM_PROMPT = `You localize household flood readiness plans for Indian regional-language readers. Given a plan in English and a target language, rewrite every field naturally and idiomatically in the target language, the way a native speaker would actually say it — do not translate word-for-word. Keep it plain, practical, and just as specific about the household's actual situation as the English version. Keep the same JSON structure and the same number of checklist items and list entries as the input.`
+
+export async function localizeReadinessCard(card, languageName) {
+  const cacheKey = `${languageName}::${JSON.stringify(card)}`
+  if (localizationCache.has(cacheKey)) {
+    return localizationCache.get(cacheKey)
+  }
+
+  const ai = getClient()
+
+  const translatable = { ...card }
+  delete translatable.risk_tier
+
+  let response
+  try {
+    response = await ai.models.generateContent({
+      model: MODEL,
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: `Target language: ${languageName}\n\nEnglish plan:\n${JSON.stringify(translatable, null, 2)}`,
+            },
+          ],
+        },
+      ],
+      config: {
+        systemInstruction: LOCALIZATION_SYSTEM_PROMPT,
+        responseMimeType: 'application/json',
+        responseSchema: LOCALIZED_CARD_SCHEMA,
+      },
+    })
+  } catch (err) {
+    throw new Error(`Could not reach Gemini: ${err.message || 'unknown error'}`)
+  }
+
+  const rawText = response?.text
+  if (!rawText) {
+    throw new Error('Gemini returned an empty response.')
+  }
+
+  let parsed
+  try {
+    parsed = JSON.parse(rawText)
+  } catch {
+    throw new Error('Gemini returned a response that was not valid JSON.')
+  }
+
+  if (!isValidLocalizedCard(parsed)) {
+    throw new Error("Gemini's translated response was missing required fields.")
+  }
+
+  localizationCache.set(cacheKey, parsed)
   return parsed
 }
